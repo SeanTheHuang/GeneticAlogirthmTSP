@@ -109,6 +109,7 @@ Individual* SelectFitIndividual()
 
 void GenerateNewPopulation()
 {
+	//Genetic algorithm variables
 	float crossOverChance = 0.7f; // 70% chance
 	float mutationChance = 0.05f; //  5% chance
 	vector<Individual*> newPopulation;
@@ -179,7 +180,7 @@ float DistanceBetweenNodes(int index1, int index2)
 
 void Initialize()
 {
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
 
 	//Populate look up table
 	for (size_t i = 0; i < NUM_NODES; i++)
@@ -224,19 +225,15 @@ void PrintPath(Individual* ind)
 
 int main()
 {
-	Initialize();
+	Initialize();	//Get the simulation ready
 
 	cout << "Starting Simulation" << endl;;
 	cout << "===================" << endl << endl;
 
-	for (size_t i = 0; i < NUM_ITERATIONS; i++)
+	for (size_t i = 0; i < NUM_ITERATIONS; i++)	//One loop cycle = one genetic algorithm cycle
 	{
 		GenerateNewPopulation();
 	}
-
-	cout << "Results: " << endl << endl;;
-	cout << "Population Size: " << POPULATION_SIZE  << " individuals"<< endl;
-	cout << "Number of generations (cycles): " << NUM_ITERATIONS << endl;
 
 	//Get best individual
 	Individual* bestOne = g_currentPopulation[0];
@@ -251,11 +248,15 @@ int main()
 		}
 	}
 
+	//Print study results
+	cout << "Results: " << endl << endl;;
+	cout << "Population Size: " << POPULATION_SIZE  << " individuals"<< endl;
+	cout << "Number of generations (cycles): " << NUM_ITERATIONS << endl;
 	cout << "Lowest distance: " << bestDistance << endl;
 	cout << "Path: ";
 	PrintPath(bestOne);
 
-	ClearPopulation();
+	ClearPopulation();	//Clear memory
 
 	_getch();
 
