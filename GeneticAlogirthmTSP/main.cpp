@@ -20,17 +20,17 @@ void GenerateRandomPopulation()
 
 	for (size_t i = 0; i < POPULATION_SIZE; i++)
 	{
-		Individual* newGenome = new Individual();
+		Individual* newGuy = new Individual();
 
 		//Create pairs to swap in genome
 		for (size_t j = 0; j < NUM_NODES; j++)
 		{
 			//Chance for no swap to occur
-			newGenome->swaps[j]._index1 = rand() % NUM_NODES;
-			newGenome->swaps[j]._index2 = rand() % NUM_NODES;
+			newGuy->swaps[j]._index1 = rand() % NUM_NODES;
+			newGuy->swaps[j]._index2 = rand() % NUM_NODES;
 		}
 
-		g_currentPopulation.push_back(newGenome);
+		g_currentPopulation.push_back(newGuy);
 	}
 }
 
@@ -68,7 +68,7 @@ float GetDistanceOfPath(Individual* individual)
 Individual* SelectFitIndividual()
 {
 	float rouletteMax = 0;
-	float pathDistances[NUM_NODES];
+	float pathDistances[POPULATION_SIZE];
 	float greatestDistance = 0;
 
 	//Get total distance of all children (for roulette)
@@ -87,16 +87,21 @@ Individual* SelectFitIndividual()
 		rouletteMax += (greatestDistance - pathDistances[i]);
 	}
 
-	float rouletteOutcome = (float)(rand() % (int)ceilf(rouletteMax));
+	float rouletteOutcome = 0;
+	if (rouletteMax > 0) 
+	{
+		rouletteOutcome = (float)(rand() % (int)ceilf(rouletteMax)); 
+	}
+
 
 	//If somehow rouletteOutcome is zero, won't enter while loop
 	int chosenIndex = (rouletteOutcome == 0.0f) ? 0 : -1;
 
 	//Individual is chosen when value goes under 0
-	while (rouletteOutcome > 0 && chosenIndex < POPULATION_SIZE)
+	while (rouletteOutcome > 0 && chosenIndex < (POPULATION_SIZE-1))
 	{
-		rouletteOutcome -= (greatestDistance - pathDistances[chosenIndex]);
 		chosenIndex++;
+		rouletteOutcome -= (greatestDistance - pathDistances[chosenIndex]);
 	}
 
 	return g_currentPopulation[chosenIndex];
@@ -111,6 +116,7 @@ void GenerateNewPopulation()
 	for (size_t i = 0; i < POPULATION_SIZE; i++)
 	{
 		Individual* newIndividual = new Individual();
+		newPopulation.push_back(newIndividual);
 
 		//Select which 2 parents to read from
 		Individual* parent1 = SelectFitIndividual(); 
@@ -118,36 +124,36 @@ void GenerateNewPopulation()
 
 		while (parent1 == parent2)
 		{
-			SelectFitIndividual(); //Make sure parents are different individuals
+			parent2 = SelectFitIndividual(); //Make sure parents are different individuals
 		}
 
-		bool selectingFirstParent = true;
+		bool readingFromFirstParent = true;
 		//Start giving child the parent's genes
-		for (size_t i = 0; i < NUM_NODES; i++)
+		for (size_t j = 0; j < NUM_NODES; j++)
 		{
-			if (selectingFirstParent)	//Read from first parent
+			if (readingFromFirstParent)	//Read from first parent
 			{
-				newIndividual->swaps[i]._index1 = parent1->swaps[i]._index1;
-				newIndividual->swaps[i]._index2 = parent1->swaps[i]._index2;
+				newIndividual->swaps[j]._index1 = parent1->swaps[j]._index1;
+				newIndividual->swaps[j]._index2 = parent1->swaps[j]._index2;
 			}
 			else //Read from second parent
 			{
-				newIndividual->swaps[i]._index1 = parent2->swaps[i]._index1;
-				newIndividual->swaps[i]._index2 = parent2->swaps[i]._index2;
+				newIndividual->swaps[j]._index1 = parent2->swaps[j]._index1;
+				newIndividual->swaps[j]._index2 = parent2->swaps[j]._index2;
 			}
 
 			//Chance to crossover
 			if ((rand() / RAND_MAX) < crossOverChance)
 			{
-				selectingFirstParent = !selectingFirstParent; //Start reading from other parent
+				readingFromFirstParent = !readingFromFirstParent; //Start reading from other parent
 			}
 
 			//Chance for mutation
 			if ((rand() / RAND_MAX) < mutationChance)
 			{
 				//Random new swap
-				newIndividual->swaps[i]._index1 = rand() % NUM_NODES;
-				newIndividual->swaps[i]._index2 = rand() % NUM_NODES;
+				newIndividual->swaps[j]._index1 = rand() % NUM_NODES;
+				newIndividual->swaps[j]._index2 = rand() % NUM_NODES;
 			}
 		}
 
@@ -189,12 +195,69 @@ void Initialize()
 	GenerateRandomPopulation();
 }
 
+void PrintPath(Individual* ind)
+{
+	//Initialize path index
+	int pathIndex[NUM_NODES];
+	for (size_t i = 0; i < NUM_NODES; i++)
+	{
+		pathIndex[i] = i;
+	}
+
+	//Apply all swaps in order
+	for (size_t i = 0; i < NUM_NODES; i++)
+	{
+		int temp = pathIndex[ind->swaps[i]._index1];
+		pathIndex[ind->swaps[i]._index1] = pathIndex[ind->swaps[i]._index2];
+		pathIndex[ind->swaps[i]._index2] = temp;
+	}
+
+	//Print out path
+	for (size_t i = 0; i < NUM_NODES; i++)
+	{
+		cout << "[" << (char)(65 + pathIndex[i]) << "]-";
+	}
+
+	//Print first node again (returning to start)
+	cout << "[" << (char)(65 + pathIndex[0]) << "]";
+}
+
 int main()
 {
 	Initialize();
 
+	cout << "Starting Simulation" << endl;;
+	cout << "===================" << endl << endl;
+
+	for (size_t i = 0; i < NUM_ITERATIONS; i++)
+	{
+		GenerateNewPopulation();
+	}
+
+	cout << "Results: " << endl << endl;;
+	cout << "Population Size: " << POPULATION_SIZE  << " individuals"<< endl;
+	cout << "Number of generations (cycles): " << NUM_ITERATIONS << endl;
+
+	//Get best individual
+	Individual* bestOne = g_currentPopulation[0];
+	float bestDistance = GetDistanceOfPath(bestOne);
+
+	for (size_t i = 1; i < g_currentPopulation.size(); i++)
+	{
+		if (GetDistanceOfPath(g_currentPopulation[i]) < bestDistance)
+		{
+			bestDistance = (GetDistanceOfPath(g_currentPopulation[i]));
+			bestOne = g_currentPopulation[i];
+		}
+	}
+
+	cout << "Lowest distance: " << bestDistance << endl;
+	cout << "Path: ";
+	PrintPath(bestOne);
 
 	ClearPopulation();
+
+	_getch();
 
 	return 0;
 }

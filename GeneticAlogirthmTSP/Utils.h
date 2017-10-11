@@ -4,11 +4,13 @@
 #include <vector>
 #include <math.h>
 #include <time.h>
+#include <conio.h>
 
 using namespace std;
 
 //Genetic algorithm variables
-#define POPULATION_SIZE 100
+#define POPULATION_SIZE 50
+#define NUM_ITERATIONS 100
 
 //These have to be updated together
 #define NUM_NODES 15
